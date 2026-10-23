@@ -19,7 +19,7 @@ const wordFrom = (letters: string) =>
 const word = wordFrom("ABC");
 
 describe('matchGuess', () => {
-  // it.todo('returns exactly five colors');
+  // Pattern: invariant. The result always has exactly five colors.
   it('returns exactly five colors', () => {
     fc.assert(
       fc.property(word, word, (secret, guess) => {
@@ -28,8 +28,7 @@ describe('matchGuess', () => {
     );
   });
 
-  // it.todo('only uses the colors G, Y, B');
-
+  // Pattern: invariant. Every color is G, Y, or B.
   it('only uses the colors G, Y, B', () => {
     fc.assert(
       fc.property(word, word, (secret, guess) => {
@@ -38,7 +37,7 @@ describe('matchGuess', () => {
     );
   });
   
-  // it.todo('guessing the secret gives all greens');
+  // Pattern: conditional. Guessing the secret gives all greens.
   it('guessing the secret gives all greens', () => {
     fc.assert(
       fc.property(word, w => {
@@ -47,7 +46,7 @@ describe('matchGuess', () => {
     );
   });
 
-  // it.todo('never credits a letter more times than the secret contains it');
+  // Pattern: invariant. A letter is never credited more times than it appears in the secret.
   it('never credits a letter more times than the secret contains it', () => {
     fc.assert(
       fc.property(word, word, (secret, guess) => {
@@ -60,5 +59,32 @@ describe('matchGuess', () => {
       })
     )
   })
+
+
+  // Pattern: conditional. A letter from the secret in the wrong place is yellow, not black.
+  it('marks a swapped letter yellow', () => {
+    fc.assert(
+      fc.property(word, w => {
+        const a = w[0];
+        const b = w[1] === a ? (a === 'A' ? 'B' : 'A') : w[1];
+        const secret = a + b + w.slice(2);
+        const guess = b + a + w.slice(2);
+        const result = matchGuess(secret, guess);
+        expect(result[0]).toBe('Y');
+        expect(result[1]).toBe('Y');
+      }),
+    );
+  });
+
+  // Pattern: metamorphic. Renaming letters in both words does not change the colors.
+  it('renaming letters in the secret and guess does not change the colors', () => {
+    fc.assert(
+      fc.property(word, word, (secret, guess) => {
+        const shift = (s: string) =>
+          [...s].map(c => String.fromCharCode((c.charCodeAt(0) - 65 + 1) % 26 + 65)).join('');
+        expect(matchGuess(shift(secret), shift(guess))).toEqual(matchGuess(secret, guess));
+      }),
+    );
+  });
 
 });
